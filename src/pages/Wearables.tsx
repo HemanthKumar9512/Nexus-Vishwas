@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { WearableGrid, SensorCapabilities } from '@/components/wearables/WearableGrid';
 import { BluetoothScanner } from '@/components/wearables/BluetoothScanner';
@@ -9,10 +9,38 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Watch, Smartphone, Cpu, Zap, Bluetooth, Activity, Loader2 } from 'lucide-react';
 import { VitalReadings } from '@/hooks/useWebBluetooth';
 
-export default function Wearables() {
+type WearablesProps = {
+  onConnectWatch: () => void;
+};
+
+
+export default function Wearables({ onConnectWatch }: WearablesProps) {
   const { devices, loading, addDevice, toggleConnection, removeDevice } = useConnectedDevices();
   const { addVitals } = useHealthVitals();
   const [liveVitals, setLiveVitals] = useState<VitalReadings>({});
+
+  useEffect(() => {
+  const hash = window.location.hash;
+
+  if (hash.includes("access_token")) {
+    const params = new URLSearchParams(hash.substring(1));
+    const accessToken = params.get("access_token");
+
+    if (accessToken) {
+      console.log("✅ Google Fit Access Token:", accessToken);
+
+      localStorage.setItem("google_fit_token", accessToken);
+
+      // Remove token from URL for safety
+      window.history.replaceState(
+        null,
+        "",
+        window.location.pathname
+      );
+    }
+  }
+}, []);
+
 
   const handleConnect = async (id: string) => {
     const device = devices.find(d => d.id === id);
@@ -255,6 +283,15 @@ export default function Wearables() {
             </Card>
           </div>
         </div>
+        {/* Google Fit Connection */}
+<motion.button
+  whileTap={{ scale: 0.95 }}
+  onClick={onConnectWatch}
+  className="px-4 py-2 rounded-lg bg-primary text-white font-medium w-fit"
+>
+  Connect Watch (Google Fit)
+</motion.button>
+
       </div>
     </AppLayout>
   );

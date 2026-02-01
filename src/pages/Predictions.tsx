@@ -7,8 +7,23 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Brain, Shield, TrendingUp, Activity, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { TreatmentModality } from '@/types/health';
+import { mockHealthData } from "@/data/mockHealthData";
+import {
+  runModernMedicineAI,
+  runAyurvedicAI,
+  runSiddhaAI,
+  runIntegratedAI,
+} from "@/ai/healthAI";
+
 
 export default function Predictions() {
+  const results = [
+  runModernMedicineAI(),
+  runAyurvedicAI(),
+  runSiddhaAI(),
+  runIntegratedAI(),
+];
+
   const [selectedModality, setSelectedModality] = useState<TreatmentModality>('integrated');
 
   return (
@@ -141,6 +156,102 @@ export default function Predictions() {
             <p className="text-sm text-muted-foreground">Months Advance Warning</p>
           </motion.div>
         </div>
+        {/* Health Vitals (Sample Data) */}
+<div className="space-y-4">
+  <motion.h2
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="text-2xl font-bold"
+  >
+    Current Health Vitals (Sample Data)
+  </motion.h2>
+
+  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+    <div className="p-4 rounded-xl bg-danger/5 border border-danger/20 text-center">
+      <p className="text-sm text-muted-foreground">Heart Rate</p>
+      <p className="text-2xl font-bold text-danger">
+        {mockHealthData.heartRate} bpm
+      </p>
+    </div>
+
+    <div className="p-4 rounded-xl bg-info/5 border border-info/20 text-center">
+      <p className="text-sm text-muted-foreground">SpO₂</p>
+      <p className="text-2xl font-bold text-info">
+        {mockHealthData.spo2} %
+      </p>
+    </div>
+
+    <div className="p-4 rounded-xl bg-warning/5 border border-warning/20 text-center">
+      <p className="text-sm text-muted-foreground">Blood Pressure</p>
+      <p className="text-xl font-bold text-warning">
+        {mockHealthData.systolicBP}/{mockHealthData.diastolicBP}
+      </p>
+    </div>
+
+    <div className="p-4 rounded-xl bg-primary/5 border border-primary/20 text-center">
+      <p className="text-sm text-muted-foreground">Temperature</p>
+      <p className="text-2xl font-bold text-primary">
+        {mockHealthData.temperature} °C
+      </p>
+    </div>
+
+    <div className="p-4 rounded-xl bg-success/5 border border-success/20 text-center">
+      <p className="text-sm text-muted-foreground">Steps Today</p>
+      <p className="text-2xl font-bold text-success">
+        {mockHealthData.stepsToday}
+      </p>
+    </div>
+
+    <div className="p-4 rounded-xl bg-secondary/5 border border-secondary/20 text-center">
+      <p className="text-sm text-muted-foreground">Sleep</p>
+      <p className="text-2xl font-bold">
+        {mockHealthData.sleepHours} hrs
+      </p>
+    </div>
+  </div>
+</div>
+
+        {/* AI Module Outputs (Mock Health Data) */}
+<div className="space-y-6">
+  <motion.h2
+    initial={{ opacity: 0, y: 10 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="text-2xl font-bold"
+  >
+    AI Module Analysis (Sample Health Data)
+  </motion.h2>
+
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    {results.map((res) => (
+      <motion.div
+        key={res.module}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="p-4 rounded-xl border bg-card"
+      >
+        <h3 className="text-lg font-semibold mb-1">{res.module}</h3>
+
+        <p className="text-sm text-muted-foreground mb-2">
+          Risk Level:
+          <span className="ml-2 font-semibold text-primary">
+            {res.riskLevel}
+          </span>
+        </p>
+
+        <ul className="list-disc pl-5 text-sm space-y-1">
+          {res.suggestions.map((s, i) => (
+            <li key={i}>{s}</li>
+          ))}
+        </ul>
+
+        <p className="mt-3 text-sm font-medium text-primary">
+          Prediction: {res.prediction}
+        </p>
+      </motion.div>
+    ))}
+  </div>
+</div>
+
 
         {/* Predictions Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
