@@ -1,8 +1,9 @@
+import { useEffect } from "react";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { HealthChatbot } from "@/components/chat/HealthChatbot";
 import { MobileNav } from "@/components/layout/MobileNav";
 import Dashboard from "./pages/Dashboard";
@@ -13,7 +14,6 @@ import Appointments from "./pages/Appointments";
 import Circles from "./pages/Circles";
 import Emergency from "./pages/Emergency";
 import Medicine from "./pages/Medicine";
-
 import NotFound from "./pages/NotFound";
 
 const CLIENT_ID =
@@ -35,30 +35,50 @@ function connectWatchWithGoogle() {
   window.location.href = authUrl;
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/wearables" element={<Wearables onConnectWatch={connectWatchWithGoogle} />} />
-          <Route path="/medicine" element={<Medicine />} />
-          <Route path="/predictions" element={<Predictions />} />
-          <Route path="/hospitals" element={<Hospitals />} />
-          <Route path="/appointments" element={<Appointments />} />
-          <Route path="/circles" element={<Circles />} />
-          <Route path="/emergency" element={<Emergency />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-        <MobileNav />
-        <HealthChatbot />
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  // Global error handler to prevent white screens from unhandled promise rejections
+  useEffect(() => {
+    const handleRejection = (event: PromiseRejectionEvent) => {
+      console.warn("Suppressed unhandled rejection:", event.reason?.message || event.reason);
+      event.preventDefault();
+    };
+    window.addEventListener("unhandledrejection", handleRejection);
+    return () => window.removeEventListener("unhandledrejection", handleRejection);
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/auth" element={<Navigate to="/" replace />} />
+            <Route path="/wearables" element={<Wearables onConnectWatch={connectWatchWithGoogle} />} />
+            <Route path="/medicine" element={<Medicine />} />
+            <Route path="/predictions" element={<Predictions />} />
+            <Route path="/hospitals" element={<Hospitals />} />
+            <Route path="/appointments" element={<Appointments />} />
+            <Route path="/circles" element={<Circles />} />
+            <Route path="/emergency" element={<Emergency />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+          <MobileNav />
+          <HealthChatbot />
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;
