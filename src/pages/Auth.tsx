@@ -55,7 +55,10 @@ export default function Auth() {
     setIsLoading(false);
 
     if (error) {
-      toast.error(error.message || 'Failed to sign in');
+      const msg = error.message === 'Failed to fetch' 
+        ? 'Network error. Please check your connection and try again.' 
+        : (error.message || 'Failed to sign in');
+      toast.error(msg);
     } else {
       toast.success('Welcome back!');
       navigate('/');
@@ -81,7 +84,10 @@ export default function Auth() {
     setIsLoading(false);
 
     if (error) {
-      toast.error(error.message || 'Failed to create account');
+      const msg = error.message === 'Failed to fetch' 
+        ? 'Network error. Please check your connection and try again.' 
+        : (error.message || 'Failed to create account');
+      toast.error(msg);
     } else {
       toast.success('Account created successfully! Welcome to NEXUS.');
       navigate('/');
