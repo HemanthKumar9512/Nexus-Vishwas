@@ -47,25 +47,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: window.location.origin,
-        data: {
-          full_name: fullName,
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: {
+            full_name: fullName,
+          },
         },
-      },
-    });
-    return { error: error as Error | null };
+      });
+      return { error: error as Error | null };
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        // Retry once on abort
+        const { error } = await supabase.auth.signUp({
+          email, password, options: { emailRedirectTo: window.location.origin, data: { full_name: fullName } },
+        });
+        return { error: error as Error | null };
+      }
+      return { error: new Error(err?.message || 'Sign up failed. Please try again.') };
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-    return { error: error as Error | null };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return { error: error as Error | null };
+    } catch (err: any) {
+      if (err?.name === 'AbortError') {
+        // Retry once on abort
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        return { error: error as Error | null };
+      }
+      return { error: new Error(err?.message || 'Sign in failed. Please try again.') };
+    }
   };
 
   const signOut = async () => {
