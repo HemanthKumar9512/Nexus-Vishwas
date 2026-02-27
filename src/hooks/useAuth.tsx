@@ -19,20 +19,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      async (_event, session) => {
+        try {
+          setSession(session);
+          setUser(session?.user ?? null);
+        } catch (e) {
+          console.warn('Auth state change error:', e);
+        }
         setLoading(false);
       }
     );
 
-    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session }, error }) => {
       if (error) {
-        // Clear corrupted session to prevent infinite retry loops
-        console.warn('Session recovery failed, clearing local session:', error.message);
+        console.warn('Session recovery failed:', error.message);
         supabase.auth.signOut().catch(() => {});
         setSession(null);
         setUser(null);
@@ -40,6 +41,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSession(session);
         setUser(session?.user ?? null);
       }
+      setLoading(false);
+    }).catch(() => {
       setLoading(false);
     });
 
@@ -49,47 +52,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = async (email: string, password: string, fullName: string) => {
     try {
       const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin,
-          data: {
-            full_name: fullName,
-          },
-        },
+        email, password,
+        options: { emailRedirectTo: window.location.origin, data: { full_name: fullName } },
       });
       return { error: error as Error | null };
     } catch (err: any) {
-      if (err?.name === 'AbortError') {
-        // Retry once on abort
-        const { error } = await supabase.auth.signUp({
-          email, password, options: { emailRedirectTo: window.location.origin, data: { full_name: fullName } },
-        });
-        return { error: error as Error | null };
-      }
-      return { error: new Error(err?.message || 'Sign up failed. Please try again.') };
+      return { error: new Error(err?.message || 'Sign up failed') };
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
       return { error: error as Error | null };
     } catch (err: any) {
-      if (err?.name === 'AbortError') {
-        // Retry once on abort
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        return { error: error as Error | null };
-      }
-      return { error: new Error(err?.message || 'Sign in failed. Please try again.') };
+      return { error: new Error(err?.message || 'Sign in failed') };
     }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    await supabase.auth.signOut().catch(() => {});
   };
 
   return (
@@ -99,10 +81,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Safe useAuth that returns defaults when no provider is present
+const defaultAuth: AuthContextType = {
+  user: null,
+  session: null,
+  loading: false,
+  signUp: async () => ({ error: new Error('No auth provider') }),
+  signIn: async () => ({ error: new Error('No auth provider') }),
+  signOut: async () => {},
+};
+
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    return defaultAuth;
   }
   return context;
 }
